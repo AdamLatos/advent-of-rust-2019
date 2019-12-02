@@ -3,6 +3,7 @@ use std::fs;
 
 fn main() {
     
+    // 1
     let args: Vec<String> = env::args().collect();
     let input_file = &args[1];
     let input = fs::read_to_string(input_file).expect("Err when reading file");
@@ -10,8 +11,25 @@ fn main() {
     for num in input.trim().split(",") {
         program.push(num.parse().unwrap());
     }
+    let program_copy = program.clone();
     run_intcode(&mut program);
-    println!{"{:?}", program}
+    println!{"Answer is {:?}", program[0]}
+
+    // 2
+    for i1 in 0..100 {
+        for i2 in 0..100 {
+            program = program_copy.clone();
+            program[1] = i1;
+            program[2] = i2;
+            run_intcode(&mut program);
+            if program[0] == 19690720 {
+                println!("Second answer is {:?}", i1 * 100 + i2);
+            }
+        }
+    }
+
+
+
 }
 
 fn run_intcode(program: &mut Vec<usize>) {
