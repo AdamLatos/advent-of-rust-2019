@@ -21,7 +21,8 @@ fn main() {
         //println!("ip: {}", ip);
         //print_map(&program);
         let mut inst = parse_next_opcode(&mut program, &mut ip);
-        halt = exec_intcode(&mut program, &mut inst);
+        let ip_pre = ip;
+        halt = exec_intcode(&mut program, &mut inst, &mut ip);
     }
 }
 
@@ -46,6 +47,7 @@ fn print_map(hmap: &HashMap<usize, isize>) {
     for i in 0..10 {
         print!("{0: <4}| ", hmap.get(&i).unwrap());
     }
+    println!("");
 }
 
 fn parse_next_opcode(program: &mut HashMap<usize, isize>, ip: &mut usize) -> Instruction {
@@ -57,8 +59,9 @@ fn parse_next_opcode(program: &mut HashMap<usize, isize>, ip: &mut usize) -> Ins
     };
     //println!("op: {}", inst.opcode);
     let args_num = match inst.opcode {
-        1 | 2 => 3isize,
+        1 | 2 | 7 | 8 => 3isize,
         3 | 4 => 1,
+        5 | 6 => 2,
         99 => 0,
         _ => panic!("Undefined instruction!"),
     };
@@ -75,7 +78,7 @@ fn parse_next_opcode(program: &mut HashMap<usize, isize>, ip: &mut usize) -> Ins
     inst
 }
 
-fn exec_intcode(data: &mut HashMap<usize, isize>, inst: &mut Instruction) -> bool {
+fn exec_intcode(data: &mut HashMap<usize, isize>, inst: &mut Instruction, ip: &mut usize) -> bool {
 
     for mut a in &mut inst.args {
         a.val = match a.mode {
@@ -90,6 +93,11 @@ fn exec_intcode(data: &mut HashMap<usize, isize>, inst: &mut Instruction) -> boo
         2 => exec_mul(&inst.args, data),
         3 => exec_in(&inst.args, data),
         4 => exec_out(&inst.args),
+        5 => exec_jmp_if_true(&inst.args, ip),
+        6 => exec_jmp_if_false(&inst.args, ip),
+        7 => exec_less_than(&inst.args, data),
+        8 => exec_equals(&inst.args, data),
+
         99 => return true,
         _ => panic!("Unexpected instruction"),
     }
@@ -117,6 +125,38 @@ fn exec_in(args: &Vec<Arg>, data: &mut HashMap<usize, isize>) {
 
 fn exec_out(args: &Vec<Arg>) {
     println!("{}", args[0].val);
+}
+
+fn exec_jmp_if_true(args: &Vec<Arg>, ip: &mut usize) {
+    if args[0].val != 0 {
+        *ip = args[1].val as usize;
+        //*ip -= 3;
+    }
+}
+
+fn exec_jmp_if_false(args: &Vec<Arg>, ip: &mut usize) {
+    if args[0].val == 0 {
+        *ip = args[1].val as usize;
+        //*ip -= 3;
+    }
+}
+
+fn exec_less_than(args: &Vec<Arg>, data: &mut HashMap<usize, isize>) {
+    if args[0].val < args[1].val {
+        data.insert(args[2].arg as usize, 1);
+    }
+    else {
+        data.insert(args[2].arg as usize, 0);
+    }
+}
+
+fn exec_equals(args: &Vec<Arg>, data: &mut HashMap<usize, isize>) {
+    if args[0].val == args[1].val {
+        data.insert(args[2].arg as usize, 1);
+    }
+    else {
+        data.insert(args[2].arg as usize, 0);
+    }
 }
 
 // #[cfg(test)]
